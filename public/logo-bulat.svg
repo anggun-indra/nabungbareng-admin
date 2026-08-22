@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <!-- NabungBareng - Logo Celengan Bulat Minimalis with Rp (Transparent / No Container) -->
+  <!-- Warna Utama: #0F766E | Aksen: #ffffff | Latar Belakang: Transparan -->
+  <g id="nabungbareng-celengan-bulat">
+    <!-- Koin Masuk Slot Tabungan -->
+    <circle cx="256" cy="98" r="26" fill="#FFFFFF"/>
+    <circle cx="256" cy="98" r="16" fill="#0F766E"/>
+
+    <!-- Lubang Slot Celengan -->
+    <rect x="208" y="124" width="96" height="16" rx="8" fill="#FFFFFF"/>
+
+    <!-- Dua Kaki Penyangga Kokoh -->
+    <rect x="182" y="380" width="50" height="64" rx="18" fill="#0F766E"/>
+    <rect x="280" y="380" width="50" height="64" rx="18" fill="#0F766E"/>
+
+    <!-- Ekor Spiral Lucu di Kiri -->
+    <path d="
+      M 115 285
+      C 75 270, 55 310, 80 335
+      C 95 350, 115 330, 100 315
+      C 92 308, 85 315, 88 322
+    " stroke="#0F766E" stroke-width="18" stroke-linecap="round" fill="none"/>
+
+    <!-- Badan Bulat Utama Celengan -->
+    <circle cx="256" cy="285" r="148" fill="#0F766E"/>
+
+    <!-- Telinga Celengan di Kanan Atas -->
+    <path d="
+      M 320 148
+      L 368 85
+      C 376 75, 392 78, 396 90
+      L 404 135
+      C 408 148, 400 160, 386 164
+      Z
+    " fill="#0F766E"/>
+
+    <!-- Aksen Telinga Dalam Putih -->
+    <path d="
+      M 345 138
+      L 374 98
+      C 378 92, 386 94, 388 100
+      L 392 128
+      Z
+    " fill="#FFFFFF" opacity="0.35"/>
+
+    <!-- Hidung/Moncong Celengan di Kanan -->
+    <rect x="382" y="248" width="54" height="74" rx="27" fill="#0F766E"/>
+    
+    <!-- Lubang Hidung Putih -->
+    <circle cx="416" cy="272" r="5" fill="#FFFFFF"/>
+    <circle cx="416" cy="298" r="5" fill="#FFFFFF"/>
+
+    <!-- Mata Celengan Putih -->
+    <circle cx="362" cy="215" r="6.5" fill="#FFFFFF"/>
+
+    
+    <!-- 'Rp' Center Emblem in Pure White #FFFFFF -->
+    <g id="rp-emblem" transform="translate(236, 280) scale(1.05)">
+      <!-- R (Capital) -->
+      <path d="
+        M -78 -48
+        L -26 -48
+        C -4 -48, 12 -34, 12 -14
+        C 12 1, 0 14, -16 16
+        L 14 50
+        L -12 50
+        L -36 18
+        L -54 18
+        L -54 50
+        L -78 50
+        Z
+        M -54 -26
+        L -54 -4
+        L -24 -4
+        C -11 -4, -4 -8, -4 -15
+        C -4 -22, -11 -26, -24 -26
+        Z
+      " fill="#FFFFFF"/>
+
+      <!-- p (Lowercase) -->
+      <path d="
+        M 24 -18
+        L 46 -18
+        L 46 -5
+        C 54 -14, 66 -20, 80 -20
+        C 102 -20, 118 -3, 118 20
+        C 118 43, 102 60, 80 60
+        C 66 60, 54 54, 46 45
+        L 46 72
+        L 24 72
+        Z
+        M 46 20
+        C 46 32, 56 42, 70 42
+        C 84 42, 94 32, 94 20
+        C 94 8, 84 -2, 70 -2
+        C 56 -2, 46 8, 46 20
+        Z
+      " fill="#FFFFFF"/>
+    </g>
+  
+  </g>
+</svg>

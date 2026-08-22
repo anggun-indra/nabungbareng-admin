@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production & Build outputs
+dist/
+build/
+.cache/
+.vite/
+.firebase/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# System & Editor
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+*-debug.log*
+logs/
+*.log
+.claude-replay.*
+.tmp-*
+
+# Agent platform state
+/.plugins/
+/.opencode-skills/

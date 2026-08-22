@@ -1,0 +1,11 @@
+{
+  "title": "Nabung Bareng Admin",
+  "description": "Manage and verify class savings with ease by tracking student balances, approving transfers, recording expenses, and maintaining audit trails in a user-friendly dashboard.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
