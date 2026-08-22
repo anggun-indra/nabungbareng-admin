@@ -7,7 +7,6 @@ import {
   Scale,
   FileBarChart2,
   Settings,
-  PiggyBank,
   LogOut,
   Building2,
   Crown,

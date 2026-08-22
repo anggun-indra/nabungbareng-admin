@@ -10,7 +10,6 @@ import {
   Crown,
   ShieldCheck,
   LogOut,
-  PiggyBank,
   CheckCircle2,
   Receipt,
   Scale,
@@ -20,6 +19,7 @@ import {
   Clock,
   HelpCircle,
 } from "lucide-react";
+import NabungBarengLogo from "./components/NabungBarengLogo";
 import Sidebar, { Page } from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Verifikasi from "./pages/Verifikasi";
@@ -330,15 +330,19 @@ function MainApp() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center p-4">
-        <div className="relative">
-          <div className="w-16 h-16 bg-[#0F766E] rounded-2xl flex items-center justify-center shadow-2xl animate-pulse">
-            <PiggyBank size={32} className="text-white" />
+      <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Ambient lighting glow */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="relative mb-5">
+            <NabungBarengLogo size={84} primaryColor="#0F766E" className="drop-shadow-2xl animate-pulse" />
+            <div className="absolute -inset-3 rounded-full border-2 border-teal-500/20 animate-spin" />
           </div>
-          <div className="absolute -inset-2 rounded-3xl border-2 border-teal-500/20 animate-spin" />
+          <h2 className="text-white font-extrabold text-xl tracking-tight">
+            NabungBareng <span className="text-teal-400">Admin</span>
+          </h2>
+          <p className="text-slate-400 text-xs mt-1.5 font-medium">Memverifikasi sesi & otorisasi akun...</p>
         </div>
-        <h2 className="text-white font-bold text-lg mt-6">NabungBareng Admin</h2>
-        <p className="text-slate-400 text-xs mt-1">Memverifikasi sesi & otorisasi akun...</p>
       </div>
     );
   }
