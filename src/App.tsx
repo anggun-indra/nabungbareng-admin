@@ -31,6 +31,7 @@ import Pengaturan from "./pages/Pengaturan";
 import SuperAdminGroups from "./pages/superadmin/SuperAdminGroups";
 import SuperAdminAdmins from "./pages/superadmin/SuperAdminAdmins";
 import SuperAdminStorage from "./pages/superadmin/SuperAdminStorage";
+import SuperAdminUsage from "./pages/superadmin/SuperAdminUsage";
 import SuperAdminAIConfigs from "./pages/superadmin/SuperAdminAIConfigs";
 import DesktopInstallPrompt from "./components/DesktopInstallPrompt";
 import PwaUpdateBanner from "./components/PwaUpdateBanner";
@@ -43,13 +44,14 @@ import { supabase } from "./lib/supabase";
 const pageTitles: Record<Page, string> = {
   dashboard: "Dashboard Ringkasan",
   verifikasi: "Verifikasi Setoran",
-  siswa: "Siswa & Saldo",
+  siswa: "Member & Saldo",
   pengeluaran: "Catat Pengeluaran",
   rekonsiliasi: "Rekonsiliasi Kas",
   laporan: "Laporan & Ekspor",
   pengaturan: "Pengaturan Grup",
   superadmin_dashboard: "Manajemen Grup & Sekolah",
   superadmin_admins: "Kelola Admin Group",
+  superadmin_usage: "System Usage & Kuota",
   superadmin_storage: "Kapasitas & Kesehatan Sistem",
   superadmin_ai: "Pengaturan API Key & Model AI",
 };
@@ -640,6 +642,7 @@ function MainApp() {
             <>
               {page === "superadmin_dashboard" && <SuperAdminGroups onNavigate={navigate} />}
               {page === "superadmin_admins" && <SuperAdminAdmins onNavigate={navigate} />}
+              {page === "superadmin_usage" && <SuperAdminUsage />}
               {page === "superadmin_storage" && <SuperAdminStorage />}
               {page === "superadmin_ai" && <SuperAdminAIConfigs />}
             </>

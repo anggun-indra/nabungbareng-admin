@@ -15,6 +15,7 @@ import {
   HardDrive,
   Server,
   Bot,
+  Activity,
   X,
   ChevronRight,
 } from "lucide-react";
@@ -31,6 +32,7 @@ export type Page =
   | "pengaturan"
   | "superadmin_dashboard"
   | "superadmin_admins"
+  | "superadmin_usage"
   | "superadmin_storage"
   | "superadmin_ai";
 
@@ -77,6 +79,7 @@ export default function Sidebar({
   const superAdminNav = [
     { page: "superadmin_dashboard" as Page, label: "Grup & Sekolah", icon: Building2 },
     { page: "superadmin_admins" as Page, label: "Kelola Admin Group", icon: Users },
+    { page: "superadmin_usage" as Page, label: "System Usage", icon: Activity },
     { page: "superadmin_storage" as Page, label: "Storage & Database", icon: Server },
     { page: "superadmin_ai" as Page, label: "Pengaturan AI API", icon: Bot },
   ];
