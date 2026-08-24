@@ -14,8 +14,10 @@ import {
   UploadCloud,
   Edit3,
   Trash2,
+  Users,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../context/AuthContext";
 
 interface GroupItem {
   id: string;
@@ -34,6 +36,7 @@ interface SuperAdminGroupsProps {
 }
 
 export default function SuperAdminGroups({ onNavigate }: SuperAdminGroupsProps) {
+  const { setActiveGroup } = useAuth();
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -393,13 +396,39 @@ export default function SuperAdminGroups({ onNavigate }: SuperAdminGroupsProps) 
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleOpenEdit(g)}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <Edit3 size={13} />
-                        <span>Edit / Logo</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveGroup({
+                              group_id: g.id,
+                              group_name: g.name,
+                              school_name: g.school_name || "",
+                              public_slug: g.public_slug || "",
+                              role: "super_admin",
+                              status: g.status,
+                              monthly_target_idr: g.monthly_target_idr,
+                              start_month: g.created_at ? g.created_at.slice(0, 7) : "2026-08",
+                              member_id: "",
+                              logo_url: g.logo_url,
+                            });
+                            onNavigate?.("siswa");
+                          }}
+                          className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                          title="Kelola Member & Saldo Grup Ini"
+                        >
+                          <Users size={13} />
+                          <span>Member & Saldo</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(g)}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Edit3 size={13} />
+                          <span>Edit / Logo</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

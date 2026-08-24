@@ -432,10 +432,10 @@ function MainApp() {
                 )}
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block truncate">
-                {isSuper
-                  ? "Sistem Global Platform NabungBareng"
-                  : activeGroup
+                {activeGroup
                   ? `${activeGroup.group_name} · ${activeGroup.school_name || "Grup Tabungan"}`
+                  : isSuper
+                  ? "Sistem Global Platform NabungBareng"
                   : "Portal Admin"}
               </p>
             </div>
@@ -443,8 +443,8 @@ function MainApp() {
 
           {/* Right Header items */}
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            {/* Group Switcher for Group Admin with multiple groups */}
-            {!isSuper && managedGroups.length > 0 && (
+            {/* Group Switcher */}
+            {managedGroups.length > 0 && (
               <div className="relative">
                 <button
                   onClick={() => setShowGroupDropdown(!showGroupDropdown)}
@@ -462,7 +462,7 @@ function MainApp() {
                     <div className="fixed inset-0 z-20" onClick={() => setShowGroupDropdown(false)} />
                     <div className="absolute right-0 top-10 w-64 bg-white border border-[#E2E8F0] rounded-2xl shadow-xl z-30 p-2 space-y-1">
                       <p className="text-[11px] font-bold text-slate-400 px-3 py-1 uppercase tracking-wider">
-                        Grup yang Anda Kelola
+                        {isSuper ? "Pilih Grup (Semua Grup)" : "Grup yang Anda Kelola"}
                       </p>
                       {managedGroups.map((g) => {
                         const isCurrent = activeGroup?.group_id === g.group_id;

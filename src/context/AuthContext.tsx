@@ -65,7 +65,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (info.is_super_admin) {
         setRole("super_admin");
-        setActiveGroupState(null);
+        const savedGroupId = localStorage.getItem(ACTIVE_GROUP_KEY);
+        const matched = info.managed_groups.find((g) => g.group_id === savedGroupId);
+        const selected = matched || info.managed_groups[0] || null;
+        setActiveGroupState(selected);
+        if (selected) {
+          localStorage.setItem(ACTIVE_GROUP_KEY, selected.group_id);
+        }
       } else if (info.is_group_admin && info.managed_groups.length > 0) {
         setRole("group_admin");
         // Restore previous selected group if valid, otherwise select the first group
