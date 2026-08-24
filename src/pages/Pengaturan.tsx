@@ -115,6 +115,7 @@ export default function Pengaturan() {
         p_monthly_target_idr: monthlyTarget,
         p_start_month: startMonth,
         p_school_name: schoolName.trim() || undefined,
+        p_group_name: activeGroup.group_name || undefined,
         p_logo_url: finalLogoUrl || undefined,
       });
       if (error) throw error;
