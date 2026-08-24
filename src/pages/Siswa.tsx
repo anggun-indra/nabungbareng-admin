@@ -296,76 +296,96 @@ export default function SiswaSaldo() {
     try {
       const targetIdr = activeGroup.monthly_target_idr || 25000;
 
-      const { data, error } = await supabase
+      // 1. Fetch group members
+      const { data: membersData, error: membersErr } = await supabase
         .from("group_members")
-        .select(`
-          id,
-          user_id,
-          student_name,
-          display_name,
-          created_at,
-          effective_start_month,
-          profiles (
-            email
-          ),
-          member_balances (
-            balance_idr
-          ),
-          payment_submissions (
-            amount_idr,
-            transfer_date,
-            period_label,
-            period_allocations,
-            status
-          )
-        `)
+        .select("id, user_id, student_name, display_name, created_at, effective_start_month")
         .eq("group_id", activeGroup.group_id)
         .eq("role", "member")
         .eq("active", true)
         .order("student_name", { ascending: true });
 
-      if (error) throw error;
+      if (membersErr) throw membersErr;
 
-      if (data) {
+      // 2. Fetch member balances for this group
+      const { data: balancesData, error: balancesErr } = await supabase
+        .from("member_balances")
+        .select("group_member_id, balance_idr")
+        .eq("group_id", activeGroup.group_id);
+
+      if (balancesErr) console.warn("Balances fetch warning:", balancesErr);
+
+      // 3. Fetch verified payment submissions for this group
+      const { data: paymentsData, error: paymentsErr } = await supabase
+        .from("payment_submissions")
+        .select("group_member_id, amount_idr, transfer_date, period_label, period_allocations, status")
+        .eq("group_id", activeGroup.group_id)
+        .in("status", ["verified", "Disetujui"]);
+
+      if (paymentsErr) console.warn("Payments fetch warning:", paymentsErr);
+
+      // 4. Fetch profiles for email
+      const userIds = (membersData || []).map((m: any) => m.user_id).filter(Boolean);
+      const profilesMap = new Map<string, string>();
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, email")
+          .in("id", userIds);
+        if (profilesData) {
+          profilesData.forEach((p: any) => profilesMap.set(p.id, p.email));
+        }
+      }
+
+      const balancesMap = new Map<string, number>();
+      if (balancesData) {
+        balancesData.forEach((b: any) => balancesMap.set(b.group_member_id, Number(b.balance_idr)));
+      }
+
+      const paymentsMap = new Map<string, any[]>();
+      if (paymentsData) {
+        paymentsData.forEach((p: any) => {
+          const arr = paymentsMap.get(p.group_member_id) || [];
+          arr.push(p);
+          paymentsMap.set(p.group_member_id, arr);
+        });
+      }
+
+      if (membersData) {
         const now = new Date();
         const currentMonthName = `${new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(now)} ${now.getFullYear()}`.toLowerCase();
 
-        const list: StudentItem[] = data.map((gm: any) => {
-          const mb = gm.member_balances;
-          const balance = Array.isArray(mb) ? (mb[0]?.balance_idr ?? 0) : (mb?.balance_idr ?? 0);
+        const list: StudentItem[] = membersData.map((gm: any) => {
+          const balance = balancesMap.get(gm.id) ?? 0;
           const studentName = gm.student_name || gm.display_name || "Member";
-          const parentEmail = gm.profiles?.email || "-";
+          const parentEmail = profilesMap.get(gm.user_id) || "-";
           const parentName = gm.display_name || "Akun Member";
 
           let monthlyDep = 0;
           let lastDate = gm.created_at;
           const paidMonthsSet = new Set<string>();
 
-          const subs = gm.payment_submissions as any[];
-          if (subs) {
-            subs.forEach((s) => {
-              if (s.status === "verified" || s.status === "Disetujui") {
-                if (s.transfer_date > lastDate) lastDate = s.transfer_date;
+          const subs = paymentsMap.get(gm.id) || [];
+          subs.forEach((s) => {
+            if (s.transfer_date > lastDate) lastDate = s.transfer_date;
 
-                const allocs = s.period_allocations as Array<{ period: string; amount_idr: number }>;
-                if (allocs && allocs.length > 0) {
-                  allocs.forEach((a) => {
-                    paidMonthsSet.add(a.period.trim());
-                    if (a.period.trim().toLowerCase() === currentMonthName) {
-                      monthlyDep += Number(a.amount_idr);
-                    }
-                  });
-                } else if (s.period_label) {
-                  s.period_label.split(",").forEach((p: string) => {
-                    paidMonthsSet.add(p.trim());
-                    if (p.trim().toLowerCase() === currentMonthName) {
-                      monthlyDep += Number(s.amount_idr);
-                    }
-                  });
+            const allocs = s.period_allocations as Array<{ period: string; amount_idr: number }>;
+            if (allocs && allocs.length > 0) {
+              allocs.forEach((a) => {
+                paidMonthsSet.add(a.period.trim());
+                if (a.period.trim().toLowerCase() === currentMonthName) {
+                  monthlyDep += Number(a.amount_idr);
                 }
-              }
-            });
-          }
+              });
+            } else if (s.period_label) {
+              s.period_label.split(",").forEach((p: string) => {
+                paidMonthsSet.add(p.trim());
+                if (p.trim().toLowerCase() === currentMonthName) {
+                  monthlyDep += Number(s.amount_idr);
+                }
+              });
+            }
+          });
 
           let status: "lunas" | "aktif" | "nunggak" = "nunggak";
           if (monthlyDep >= targetIdr) {

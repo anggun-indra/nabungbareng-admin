@@ -141,29 +141,44 @@ export default function Laporan() {
 
     try {
       if (reportType === "saldo_siswa") {
-        const { data } = await supabase
+        const { data: membersData } = await supabase
           .from("group_members")
-          .select(`
-            id,
-            student_name,
-            display_name,
-            profiles (email),
-            member_balances (balance_idr)
-          `)
+          .select("id, user_id, student_name, display_name")
           .eq("group_id", activeGroup.group_id)
           .eq("role", "member")
           .eq("active", true);
 
-        if (data) {
+        if (membersData) {
+          const { data: balancesData } = await supabase
+            .from("member_balances")
+            .select("group_member_id, balance_idr")
+            .eq("group_id", activeGroup.group_id);
+
+          const balancesMap = new Map<string, number>();
+          if (balancesData) {
+            balancesData.forEach((b: any) => balancesMap.set(b.group_member_id, Number(b.balance_idr)));
+          }
+
+          const userIds = membersData.map((m: any) => m.user_id).filter(Boolean);
+          const profilesMap = new Map<string, string>();
+          if (userIds.length > 0) {
+            const { data: profilesData } = await supabase
+              .from("profiles")
+              .select("id, email")
+              .in("id", userIds);
+            if (profilesData) {
+              profilesData.forEach((p: any) => profilesMap.set(p.id, p.email));
+            }
+          }
+
           const headers = ["ID Member", "Nama Member", "Akun Login", "Email", "Saldo Simpanan (Rp)"];
-          const rows = data.map((s: any) => {
-            const mb = s.member_balances;
-            const bal = Array.isArray(mb) ? (mb[0]?.balance_idr ?? 0) : (mb?.balance_idr ?? 0);
+          const rows = membersData.map((s: any) => {
+            const bal = balancesMap.get(s.id) ?? 0;
             return [
               s.id,
               `"${s.student_name || s.display_name}"`,
               `"${s.display_name || '-'}"`,
-              `"${s.profiles?.email || '-'}"`,
+              `"${profilesMap.get(s.user_id) || '-'}"`,
               Number(bal),
             ];
           });

@@ -145,14 +145,7 @@ export default function Pengeluaran() {
       // 2. Fetch all active student members
       const { data: stdData, error: stdErr } = await supabase
         .from("group_members")
-        .select(`
-          id,
-          student_name,
-          display_name,
-          member_balances (
-            balance_idr
-          )
-        `)
+        .select("id, student_name, display_name")
         .eq("group_id", activeGroup.group_id)
         .eq("role", "member")
         .eq("active", true)
@@ -160,10 +153,19 @@ export default function Pengeluaran() {
 
       if (stdErr) throw stdErr;
 
+      const { data: balancesData } = await supabase
+        .from("member_balances")
+        .select("group_member_id, balance_idr")
+        .eq("group_id", activeGroup.group_id);
+
+      const balancesMap = new Map<string, number>();
+      if (balancesData) {
+        balancesData.forEach((b: any) => balancesMap.set(b.group_member_id, Number(b.balance_idr)));
+      }
+
       if (stdData) {
         const stdList: StudentParticipant[] = stdData.map((s: any) => {
-          const mb = s.member_balances;
-          const bal = Array.isArray(mb) ? (mb[0]?.balance_idr ?? 0) : (mb?.balance_idr ?? 0);
+          const bal = balancesMap.get(s.id) ?? 0;
           return {
             id: s.id,
             student_name: s.student_name || s.display_name || "Siswa",
