@@ -299,13 +299,16 @@ export default function SiswaSaldo() {
       // 1. Fetch group members
       const { data: membersData, error: membersErr } = await supabase
         .from("group_members")
-        .select("id, user_id, student_name, display_name, created_at, effective_start_month")
+        .select("id, user_id, student_name, display_name, created_at")
         .eq("group_id", activeGroup.group_id)
         .eq("role", "member")
         .eq("active", true)
         .order("student_name", { ascending: true });
 
-      if (membersErr) throw membersErr;
+      if (membersErr) {
+        console.error("membersErr:", membersErr);
+        throw membersErr;
+      }
 
       // 2. Fetch member balances for this group
       const { data: balancesData, error: balancesErr } = await supabase
@@ -406,7 +409,7 @@ export default function SiswaSaldo() {
             paid_months: Array.from(paidMonthsSet),
             last_activity_date: lastDate,
             created_at: gm.created_at,
-            effective_start_month: gm.effective_start_month,
+            effective_start_month: gm.created_at ? gm.created_at.slice(0, 7) : undefined,
           };
         });
 
