@@ -25,11 +25,35 @@ import {
   Info,
   Clock,
   ArrowLeft,
+  Copy,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
 type StatusFilter = "semua" | "submitted" | "verified" | "rejected" | "voided";
+
+export interface DuplicateMatch {
+  id: string;
+  group_id: string;
+  group_name: string;
+  student_name: string;
+  display_name: string;
+  amount_idr: number;
+  transfer_date: string;
+  period_label: string;
+  bank_name: string | null;
+  reference_number: string | null;
+  status: string;
+  verified_at: string | null;
+  created_at: string;
+  match_reason: string;
+}
+
+export interface DuplicateCheckResult {
+  is_duplicate: boolean;
+  match_count: number;
+  matches: DuplicateMatch[];
+}
 
 interface OCRData {
   amount_idr: number | null;
@@ -64,6 +88,7 @@ interface SubmissionItem {
   signed_url?: string | null;
   bank_name?: string | null;
   reference_number?: string | null;
+  sha256?: string | null;
   ocr_model?: string | null;
   ocr_status?: string | null;
   ocr_data?: OCRData | null;
@@ -151,6 +176,7 @@ export default function Verifikasi() {
           created_at,
           bank_name,
           reference_number,
+          sha256,
           group_members (
             id,
             student_name,
@@ -205,6 +231,7 @@ export default function Verifikasi() {
               created_at: row.created_at,
               bank_name: row.bank_name || null,
               reference_number: row.reference_number || null,
+              sha256: row.sha256 || null,
               student_name: gm?.student_name || gm?.display_name || "Siswa",
               display_name: gm?.display_name || "Wali Murid",
               current_balance: Number(balance),
@@ -272,6 +299,93 @@ export default function Verifikasi() {
     selected?.ocr_data?.bank_name,
     selected?.ocr_data?.reference_number,
   ]);
+
+  // Duplicate Submission Checking State & Real-Time Effect
+  const [duplicateResult, setDuplicateResult] = useState<DuplicateCheckResult | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!selected) {
+      setDuplicateResult(null);
+      return;
+    }
+
+    const effectiveRef = (referenceNumber || selected.reference_number || selected.ocr_data?.reference_number || "").trim();
+    const effectiveBank = (bankName || selected.bank_name || selected.ocr_data?.bank_name || "").trim();
+    const effectiveSha = selected.sha256 || null;
+
+    if (!effectiveRef && !effectiveSha) {
+      setDuplicateResult(null);
+      return;
+    }
+
+    let isMounted = true;
+    const timer = setTimeout(async () => {
+      setIsCheckingDuplicate(true);
+      try {
+        const { data, error } = await supabase.rpc("check_duplicate_submission", {
+          p_submission_id: selected.id,
+          p_reference_number: effectiveRef || undefined,
+          p_bank_name: effectiveBank || undefined,
+          p_sha256: effectiveSha || undefined,
+        });
+
+        if (!error && data && isMounted) {
+          setDuplicateResult(data as DuplicateCheckResult);
+        }
+      } catch (err) {
+        console.warn("Duplicate check error:", err);
+      } finally {
+        if (isMounted) setIsCheckingDuplicate(false);
+      }
+    }, 250);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [
+    selected?.id,
+    selected?.sha256,
+    referenceNumber,
+    bankName,
+    selected?.reference_number,
+    selected?.bank_name,
+    selected?.ocr_data?.reference_number,
+    selected?.ocr_data?.bank_name,
+  ]);
+
+  // Pre-calculate duplicate indicators for the left antrean list
+  const duplicateCandidateMap = useMemo(() => {
+    const verifiedRefMap = new Map<string, string>();
+    const verifiedShaMap = new Map<string, string>();
+
+    submissions.forEach((s) => {
+      if (s.status === "verified") {
+        const ref = (s.reference_number || s.ocr_data?.reference_number || "").trim().toLowerCase().replace(/\s+/g, "");
+        if (ref && ref.length >= 4) {
+          verifiedRefMap.set(ref, s.id);
+        }
+        if (s.sha256) {
+          verifiedShaMap.set(s.sha256.trim().toLowerCase(), s.id);
+        }
+      }
+    });
+
+    const isDup: Record<string, boolean> = {};
+    submissions.forEach((s) => {
+      if (s.status !== "verified") {
+        const ref = (s.reference_number || s.ocr_data?.reference_number || "").trim().toLowerCase().replace(/\s+/g, "");
+        const sha = s.sha256 ? s.sha256.trim().toLowerCase() : "";
+        if ((ref && ref.length >= 4 && verifiedRefMap.has(ref) && verifiedRefMap.get(ref) !== s.id) ||
+            (sha && verifiedShaMap.has(sha) && verifiedShaMap.get(sha) !== s.id)) {
+          isDup[s.id] = true;
+        }
+      }
+    });
+
+    return isDup;
+  }, [submissions]);
 
   const ocrData = selected?.ocr_data;
   const isOCRCompleted = selected?.ocr_status === "completed" || selected?.ocr_status === "fallback_completed";
@@ -627,6 +741,14 @@ export default function Verifikasi() {
                             <AlertTriangle size={9} /> Beda AI
                           </span>
                         )}
+                        {duplicateCandidateMap[item.id] && (
+                          <span
+                            title="Indikasi Duplikat: Nomor referensi atau bukti ini serupa dengan transaksi yang telah terverifikasi"
+                            className="flex items-center gap-0.5 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 animate-pulse"
+                          >
+                            <Copy size={9} /> Duplikat?
+                          </span>
+                        )}
                       </div>
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <Calendar size={10} />
@@ -677,6 +799,75 @@ export default function Verifikasi() {
 
           {/* Scrollable details */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
+            {/* 🚨 CRITICAL ALERT BANNER: Duplicate Payment / RRN / SHA-256 Match */}
+            {duplicateResult?.is_duplicate && (
+              <div className="flex items-start gap-3 p-4 sm:p-5 bg-rose-500/10 border-2 border-rose-500/90 rounded-3xl text-rose-950 shadow-sm animate-in fade-in duration-200">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-700 flex-shrink-0 mt-0.5 shadow-2xs">
+                  <Copy size={22} className="text-rose-600 animate-pulse" />
+                </div>
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <p className="text-xs font-black uppercase tracking-wider text-rose-900 flex items-center gap-1.5">
+                      <span>🚨 PERINGATAN: INDIKASI BUKTI TRANSFER DUPLIKAT TERDETEKSI!</span>
+                    </p>
+                    <span className="text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 border border-rose-300">
+                      Ditemukan {duplicateResult.match_count} Transaksi Serupa
+                    </span>
+                  </div>
+                  <p className="text-xs text-rose-900 leading-relaxed font-medium">
+                    Nomor referensi (<strong className="font-mono font-bold text-rose-950">{referenceNumber || selected.reference_number || selected.ocr_data?.reference_number || "—"}</strong>)
+                    {bankName ? ` pada bank/metode ${bankName}` : ""} sudah pernah tercatat dan <strong>TERVERIFIKASI</strong> pada transaksi lain:
+                  </p>
+
+                  {/* List of matched duplicate transactions */}
+                  <div className="space-y-2 pt-1">
+                    {duplicateResult.matches.map((match) => (
+                      <div
+                        key={match.id}
+                        className="p-3 bg-white/95 border border-rose-200 rounded-2xl text-xs space-y-1.5 shadow-2xs"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-1 border-b border-rose-100 pb-1.5">
+                          <span className="font-bold text-[#0F172A] flex items-center gap-1">
+                            👤 {match.student_name} <span className="text-slate-400 font-normal">({match.display_name})</span>
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                            ✅ {match.status === "verified" ? "Terverifikasi" : match.status}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-slate-600">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Nominal:</span>
+                            <span className="font-mono font-bold text-teal-800">Rp{match.amount_idr.toLocaleString("id-ID")}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Periode:</span>
+                            <span className="font-semibold text-slate-800">{match.period_label}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Tanggal Transfer:</span>
+                            <span className="font-semibold text-slate-800">
+                              {match.transfer_date ? new Date(match.transfer_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                            </span>
+                          </div>
+                          {match.group_name && (
+                            <div className="col-span-2 sm:col-span-3 pt-0.5">
+                              <span className="text-slate-400 text-[10px]">Grup: </span>
+                              <span className="font-semibold text-slate-700">{match.group_name}</span>
+                              <span className="ml-2 text-rose-700 font-bold text-[10px]">({match.match_reason})</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-[11px] text-rose-800 font-semibold pt-1">
+                    ⚠️ Harap periksa keaslian bukti transfer dengan cermat. Tolak setoran ini jika bukti transfer merupakan struk lama yang diunggah ulang.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* ⚠️ PROMINENT TOP ALERT BANNERS: Mismatch and Date Tolerance Warnings */}
             {isAmountDifferentFromSubmission && (
               <div className="flex items-start gap-3 p-4 bg-amber-500/10 border-2 border-amber-400/90 rounded-3xl text-amber-950 shadow-xs">
@@ -1273,6 +1464,18 @@ export default function Verifikasi() {
             </div>
 
             {/* Modal Alert Warnings */}
+            {duplicateResult?.is_duplicate && (
+              <div className="p-3.5 bg-rose-50 border-2 border-rose-400 rounded-2xl text-xs text-rose-950 space-y-1.5">
+                <p className="font-black flex items-center gap-1.5 text-rose-900">
+                  <Copy size={14} className="text-rose-700 flex-shrink-0" />
+                  <span className="uppercase tracking-wider">⚠️ PERHATIAN: BUKTI DUPLIKAT TERDETEKSI!</span>
+                </p>
+                <p className="text-[11px] text-rose-900 leading-snug">
+                  RRN/bukti ini sudah pernah diverifikasi pada {duplicateResult.match_count} transaksi sebelumnya ({duplicateResult.matches[0]?.student_name} - Rp{duplicateResult.matches[0]?.amount_idr.toLocaleString("id-ID")}). Pastikan Anda telah memeriksa mutasi rekening bank secara langsung sebelum menyetujui.
+                </p>
+              </div>
+            )}
+
             {isLowAiConfidence && (
               <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 space-y-0.5">
                 <p className="font-bold flex items-center gap-1.5 text-amber-900">
